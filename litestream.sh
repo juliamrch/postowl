@@ -3,8 +3,8 @@
 #!/bin/bash
 
 # Download Litestream
-wget https://github.com/benbjohnson/litestream/releases/download/v$LITESTREAM_VERSION/litestream-v$LITESTREAM_VERSION-linux-amd64-static.tar.gz
-tar xvzf litestream-v$LITESTREAM_VERSION-linux-amd64-static.tar.gz
+wget https://github.com/benbjohnson/litestream/releases/download/v$LITESTREAM_VERSION/litestream-v$LITESTREAM_VERSION-linux-amd64.tar.gz
+tar xvzf litestream-v$LITESTREAM_VERSION-linux-amd64.tar.gz
 chmod +rwx ./litestream
 
 
