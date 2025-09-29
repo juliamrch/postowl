@@ -50,7 +50,7 @@ PostOwl is a [SvelteKit](https://kit.svelte.dev/) application inspired by [edita
 
 ### Exploring the database
 
-PostOwl uses SQLite. [Beekeeper studio](https://github.com/beekeeper-studio/beekeeper-studio/releases) is an excellent app for exploring the database during development.
+PostOwl uses **SQLite**. [Beekeeper studio](https://github.com/beekeeper-studio/beekeeper-studio/releases) is an excellent app for exploring the database during development.
 
 ### Sending emails in development
 
