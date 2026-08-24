@@ -3,14 +3,12 @@
   import { createEventDispatcher } from 'svelte';
   import { onDestroy } from 'svelte';
 
-  let flash = undefined;
+  let flash = $state(undefined);
   let timeout;
 
-  export let recipient;
-  export let slug;
-  export let editable;
+  let { recipient, slug, editable } = $props();
 
-  $: origin = $page.data.origin;
+  let origin = $derived($page.data.origin);
 
   const dispatch = createEventDispatcher();
 
@@ -57,7 +55,7 @@
   {/if}
   <span title={recipient.name ? recipient.email : ''}>{recipient.name || recipient.email}</span>
   {#if editable}
-    <button on:click={() => handleDelete()}>
+    <button onclick={() => handleDelete()} aria-label="Remove recipient">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -71,7 +69,7 @@
     </button>
   {:else}
     <!-- Copy secret url -->
-    <button on:click={copySecretUrl}>
+    <button onclick={copySecretUrl} aria-label="Copy secret URL">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -90,7 +88,7 @@
   {/if}
   {#if flash}
     <div
-      class="absolute -bottom-6 left-5 text-xs bg-white shadow-sm rounded-full px-4 py-2 whitespace-nowrap"
+      class="absolute -bottom-6 left-5 text-xs bg-white shadow-xs rounded-full px-4 py-2 whitespace-nowrap"
     >
       Link copied
     </div>

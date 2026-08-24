@@ -13,13 +13,16 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
 
-  export let data;
-  let editable, name, avatar, bio;
-  let searchInput;
-  let searchFilter = data.searchFilter;
-  let showMenu;
-  $: currentUser = data.currentUser;
-  $: postLimit = $page.url.searchParams.get('postLimit') || 30;
+  let { data } = $props();
+  let editable = $state(false),
+    name = $state(),
+    avatar = $state(),
+    bio = $state();
+  let searchInput = $state();
+  let searchFilter = $derived(data.searchFilter);
+  let showMenu = $state(false);
+  let currentUser = $derived(data.currentUser);
+  let postLimit = $derived($page.url.searchParams.get('postLimit') || 30);
 
   function initOrReset() {
     avatar = data.bio.avatar;
@@ -92,7 +95,7 @@
 </svelte:head>
 
 {#if editable}
-  <EditorToolbar on:cancel={initOrReset} on:save={saveBio} />
+  <EditorToolbar oncancel={initOrReset} onsave={saveBio} />
 {/if}
 
 <WebsiteNav bio={{ avatar, name, bio }} bind:editable bind:showMenu>
@@ -100,7 +103,7 @@
     <div class="space-y-4 flex flex-col">
       <SecondaryButton
         size="sm"
-        on:click={() => {
+        onclick={() => {
           editable = true;
           showMenu = false;
         }}>Edit Profile</SecondaryButton
@@ -111,7 +114,7 @@
 
 <!-- __bio is there to make placeholder work with centered text -->
 <div class="__bio">
-  <div class="max-w-screen-md mx-auto px-6">
+  <div class="max-w-(--breakpoint-md) mx-auto px-6">
     <div class="pt-6 sm:pt-12 pb-2 sm:pb-6 text-center">
       <div class="w-20 h-20 md:w-28 md:h-28 mx-auto overflow-hidden relative rounded-full">
         <Image
@@ -138,7 +141,7 @@
 
 <NotEditable {editable}>
   <!-- Search bar -->
-  <div class="max-w-screen-md mx-auto px-6 pt-4 lg:pt-8">
+  <div class="max-w-(--breakpoint-md) mx-auto px-6 pt-4 lg:pt-8">
     <div class={classNames(data.searchQuery ? '' : '', 'relative')}>
       {#if !data.searchQuery && !data.searchFilter}
         <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center">
@@ -158,7 +161,12 @@
           </svg>
         </div>
       {:else}
-        <a href="/" on:click={reset} class="absolute inset-y-0 left-3 flex items-center">
+        <a
+          href="/"
+          onclick={reset}
+          class="absolute inset-y-0 left-3 flex items-center"
+          aria-label="Clear search"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -177,12 +185,12 @@
       {/if}
       <input
         bind:this={searchInput}
-        on:input={onInput}
+        oninput={onInput}
         value={data.searchQuery}
         autocomplete="off"
         id="search"
         name="search"
-        class="block w-full rounded-full border-1 border-gray-200 bg-transparent py-2 pl-10 pr-24 placeholder-gray-400 focus:border-black focus:text-black focus:outline-none focus:ring-0"
+        class="block w-full rounded-full border border-gray-200 bg-transparent py-2 pl-10 pr-24 placeholder-gray-400 focus:border-black focus:text-black focus:outline-hidden focus:ring-0"
         placeholder={`Search ${data.posts.length} posts`}
         type="text"
       />
@@ -194,7 +202,7 @@
             name="country"
             autocomplete="country-name"
             class="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-0 ring-inset focus:ring-1 focus:ring-inset focus:ring-gray-200 sm:max-w-xs sm:text-sm leading-4"
-            on:change={onInput}
+            onchange={onInput}
           >
             <option value="">Show all</option>
             <option value="private">Private</option>
@@ -207,16 +215,16 @@
 
   <div id="posts">
     {#if data.posts.length === 0}
-      <div class="max-w-screen-md mx-auto px-6 pt-4 lg:pt-8">
+      <div class="max-w-(--breakpoint-md) mx-auto px-6 pt-4 lg:pt-8">
         <div class="md:text-xl py-4 text-center">
           {#if !data.searchQuery && !searchFilter}
             {#if currentUser}
-              <!-- svelte-ignore a11y-invalid-attribute -->
-              <a class="underline" href="#" on:click={() => (editable = true)}>Personalise</a> your
+              <!-- svelte-ignore a11y_invalid_attribute -->
+              <a class="underline" href="#" onclick={() => (editable = true)}>Personalise</a> your
               profile, then <a class="underline" href={'/posts/new'}>create</a> your first post 💌
             {:else}
-              <!-- svelte-ignore a11y-invalid-attribute -->
-              <a href="#" class="underline" on:click={() => (showMenu = true)}>Sign in</a> to start writing.
+              <!-- svelte-ignore a11y_invalid_attribute -->
+              <a href="#" class="underline" onclick={() => (showMenu = true)}>Sign in</a> to start writing.
             {/if}
           {:else}
             No posts found.
@@ -225,7 +233,7 @@
       </div>
     {/if}
 
-    <div class="max-w-screen-md mx-auto px-6">
+    <div class="max-w-(--breakpoint-md) mx-auto px-6">
       <div class="my-6 space-y-8">
         {#each data.posts.slice(0, postLimit) as post}
           <PostTeaser {post} {currentUser} />
@@ -234,10 +242,10 @@
     </div>
 
     {#if postLimit < data.posts.length}
-      <div class="max-w-screen-md mx-auto px-6 pb-6">
+      <div class="max-w-(--breakpoint-md) mx-auto px-6 pb-6">
         <button
           class="w-full mx-auto block px-4 py-2 rounded-lg border shadow-md bg-white text-center uppercase font-medium"
-          on:click={showMoreposts}
+          onclick={showMoreposts}
         >
           Show more
         </button>

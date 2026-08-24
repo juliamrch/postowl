@@ -4,12 +4,12 @@
   import { goto } from '$app/navigation';
   import PlainText from '$lib/components/PlainText.svelte';
 
-  export let data;
+  let { data } = $props();
   let editable = true,
-    name = '',
-    email = '';
-  $: currentUser = data.currentUser;
-  $: bio = data.bio;
+    name = $state(''),
+    email = $state('');
+  let currentUser = $derived(data.currentUser);
+  let bio = $derived(data.bio);
 
   async function createFriend() {
     if (!currentUser) return alert('Sorry, you are not authorized.');
@@ -36,14 +36,14 @@
 
 {#if editable}
   <EditorToolbar
-    on:cancel={() => goto('/friends')}
-    on:save={createFriend}
+    oncancel={() => goto('/friends')}
+    onsave={createFriend}
     confirmLabel="Create"
     canConfirm={isEmailValid(email)}
   />
 {/if}
 
-<div class="max-w-screen-md mx-auto px-6 pb-8 sm:text-xl">
+<div class="max-w-(--breakpoint-md) mx-auto px-6 pb-8 sm:text-xl">
   <div class="pt-24 text-sm font-bold">Name</div>
 
   <div class="border-b py-2">

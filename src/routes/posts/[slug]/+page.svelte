@@ -9,17 +9,16 @@
   import NotEditable from '$lib/components/NotEditable.svelte';
   import RecipientsSelector from '$lib/components/RecipientsSelector.svelte';
 
-  export let data;
-  let editable, title, content, created_at, teaser_image, teaser, is_public, recipients;
-  let showMenu;
-
-  $: currentUser = data.currentUser;
-  $: {
-    // HACK: To make sure this is only run when the parent passes in new data
-    data = data;
-    initOrReset();
-  }
-
+  let { data = $bindable() } = $props();
+  let editable = $state(false),
+    title = $state(),
+    content = $state(),
+    created_at = $state(),
+    teaser_image,
+    teaser = $state(),
+    is_public = $state(false),
+    recipients = $state([]);
+  let showMenu = $state(false);
 
   function initOrReset() {
     title = data.title;
@@ -58,6 +57,7 @@
         slug: data.slug,
         title,
         content,
+        created_at,
         teaser,
         teaser_image,
         recipients,
@@ -76,6 +76,12 @@
       );
     }
   }
+  $effect(() => {
+    // Re-run initOrReset when data changes from the parent
+    data;
+    initOrReset();
+  });
+  let currentUser = $derived(data.currentUser);
 </script>
 
 <svelte:head>
@@ -97,25 +103,25 @@
 </svelte:head>
 
 {#if editable}
-  <EditorToolbar on:cancel={initOrReset} on:save={savePost} canConfirm={!!title} />
+  <EditorToolbar oncancel={initOrReset} onsave={savePost} canConfirm={!!title} />
 {/if}
 
 <WebsiteNav bio={data.bio} bind:editable bind:showMenu backButton={true}>
   {#if currentUser}
-    <div class="space-y-4 flex flex-col">
+    <div class="flex flex-col gap-4">
       <SecondaryButton
         size="sm"
-        on:click={() => {
+        onclick={() => {
           editable = true;
           showMenu = false;
         }}>Edit post</SecondaryButton
       >
-      <SecondaryButton size="sm" on:click={deletePost}>Delete post</SecondaryButton>
+      <SecondaryButton size="sm" onclick={deletePost}>Delete post</SecondaryButton>
     </div>
   {/if}
 </WebsiteNav>
 
-<div class="pt-8 sm:pt-16" />
+<div class="pt-8 sm:pt-16"></div>
 
 {#if currentUser}
   <RecipientsSelector slug={data.slug} {editable} bind:is_public bind:recipients />
@@ -124,7 +130,7 @@
 <Post bind:title bind:content bind:created_at {editable} />
 
 <NotEditable {editable}>
-  <div class="text-center max-w-screen-sm mx-auto px-6 py-12 sm:py-16">
+  <div class="text-center max-w-(--breakpoint-sm) mx-auto px-6 py-12 sm:py-16">
     <div class="pb-4 text-center">
       <a href="/"
         ><img

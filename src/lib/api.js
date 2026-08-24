@@ -4,7 +4,7 @@ import { DEFAULT_BIO } from '$lib/constants';
 import { nanoid } from '$lib/util';
 import sendMail from '$lib/sendMail';
 import { Blob } from 'node:buffer';
-import { env } from '$env/dynamic/private'; 
+import { env } from '$env/dynamic/private';
 const DB_PATH = env.DB_PATH;
 const ADMIN_NAME = env.ADMIN_NAME;
 const ADMIN_PASSWORD = env.ADMIN_PASSWORD;
@@ -103,6 +103,7 @@ export async function updatePost(
   slug,
   title,
   content,
+  created_at,
   teaser,
   teaser_image,
   recipients,
@@ -112,7 +113,7 @@ export async function updatePost(
   if (!currentUser) throw new Error('Not authorized');
   if (!title) throw new Error('Title is mandatory');
 
-  return db.transaction(async () => {
+  return db.transaction(() => {
     let new_slug; // in case the post title has changed
     const { title: old_title, post_id } = db
       .prepare('SELECT title, post_id FROM posts WHERE slug = ?')
@@ -134,12 +135,13 @@ export async function updatePost(
 
     const post = db
       .prepare(
-        'UPDATE posts SET slug = ?, title= ?, content = ?, teaser = ?, teaser_image = ?, is_public = ?, updated_at = ? WHERE slug = ? RETURNING slug, post_id, updated_at'
+        'UPDATE posts SET slug = ?, title= ?, content = ?, created_at = ?, teaser = ?, teaser_image = ?, is_public = ?, updated_at = ? WHERE slug = ? RETURNING slug, post_id, updated_at'
       )
       .get(
         new_slug || slug,
         title,
         content,
+        created_at,
         teaser,
         teaser_image ? JSON.stringify(teaser_image) : null,
         is_public ? 1 : 0,

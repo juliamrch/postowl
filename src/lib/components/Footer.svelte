@@ -3,9 +3,15 @@
   import { fetchJSON } from '$lib/util';
   import NotEditable from '$lib/components/NotEditable.svelte';
 
-  export let counter = undefined;
-  export let editable = false;
-  let count;
+  /**
+   * @typedef {Object} Props
+   * @property {any} [counter]
+   * @property {boolean} [editable]
+   */
+
+  /** @type {Props} */
+  let { counter = undefined, editable = false } = $props();
+  let count = $state();
 
   onMount(async () => {
     if (counter) {
@@ -17,7 +23,7 @@
 
 <NotEditable {editable}>
   <div class="">
-    <div class="max-w-screen-md mx-auto px-6 py-6 text-sm lg:text-base">
+    <div class="max-w-(--breakpoint-md) mx-auto px-6 py-6 text-sm lg:text-base">
       <div class="text-center">
         Powered by <a class="underline font-medium" href="https://www.postowl.com">PostOwl</a>. Page
         viewed {count || '…'} times.

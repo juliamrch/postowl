@@ -4,16 +4,10 @@
   import { goto } from '$app/navigation';
   import PlainText from '$lib/components/PlainText.svelte';
 
-  export let data;
-  let editable, name, email;
-
-  $: currentUser = data.currentUser;
-  $: bio = data.bio;
-  $: {
-    // HACK: To make sure this is only run when the parent passes in new data
-    data = data;
-    initOrReset();
-  }
+  let { data = $bindable() } = $props();
+  let editable = $state(false),
+    name = $state(),
+    email = $state();
 
   function initOrReset() {
     name = data.name;
@@ -52,6 +46,13 @@
       );
     }
   }
+  $effect(() => {
+    // Re-run initOrReset when data changes from the parent
+    data;
+    initOrReset();
+  });
+  let currentUser = $derived(data.currentUser);
+  let bio = $derived(data.bio);
 </script>
 
 <svelte:head>
@@ -62,13 +63,13 @@
 
 {#if editable}
   <EditorToolbar
-    on:cancel={() => goto('/friends')}
-    on:save={saveFriend}
+    oncancel={() => goto('/friends')}
+    onsave={saveFriend}
     canConfirm={isEmailValid(email)}
   />
 {/if}
 
-<div class="max-w-screen-md mx-auto px-6 pb-8 sm:text-xl">
+<div class="max-w-(--breakpoint-md) mx-auto px-6 pb-8 sm:text-xl">
   <div class="pt-24 text-sm font-bold">Name</div>
   <div class="border-b py-2">
     <PlainText {editable} bind:content={name} placeholder="Enter name" />
@@ -82,7 +83,7 @@
   <div class="text-center pt-12">
     <button
       class="font-medium text-sm sm:text-base rounded-full w-full py-3 border border-rose-600 text-rose-600"
-      on:click={deleteFriend}>Delete friend</button
+      onclick={deleteFriend}>Delete friend</button
     >
   </div>
 </div>

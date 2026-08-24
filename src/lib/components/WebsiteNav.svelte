@@ -2,21 +2,36 @@
   import { page } from '$app/stores';
   import { classNames } from '$lib/util';
   import { goto } from '$app/navigation';
+  import { enhance } from '$app/forms';
   import NotEditable from './NotEditable.svelte';
   import PrimaryButton from './PrimaryButton.svelte';
   import Modal from './Modal.svelte';
   import Input from './Input.svelte';
   import SecondaryButton from './SecondaryButton.svelte';
   import { previousPage } from '$lib/stores';
-  export let editable = false;
 
-  // Explicitly set by home page, so we get live updates
-  export let bio = undefined;
-  export let showMenu = false;
-  export let backButton = false;
-  $: data = $page.data;
-  $: currentUser = data.currentUser;
-  $: latestBio = bio || data.bio;
+  let loginError = $state(false);
+
+  /**
+   * @typedef {Object} Props
+   * @property {boolean} [editable]
+   * @property {any} [bio] - Explicitly set by home page, so we get live updates
+   * @property {boolean} [showMenu]
+   * @property {boolean} [backButton]
+   * @property {import('svelte').Snippet} [children]
+   */
+
+  /** @type {Props} */
+  let {
+    editable = $bindable(false),
+    bio = undefined,
+    showMenu = $bindable(false),
+    backButton = false,
+    children
+  } = $props();
+  let data = $derived($page.data);
+  let currentUser = $derived(data.currentUser);
+  let latestBio = $derived(bio || data.bio);
 
   function onKeyDown(e) {
     // Deactivate menu modal with esc key
@@ -31,25 +46,25 @@
     }
 
     // Activate editing with e key
-    if (e.key === 'e' && editable != true && !e.key.metaKey && !e.key.ctrlKey && currentUser) {
+    if (e.key === 'e' && editable != true && !e.metaKey && !e.ctrlKey && currentUser) {
       editable = true;
       return;
     }
     // Toggle menu modal with m key
-    if (e.key === 'm' && editable != true && !e.key.metaKey && !e.key.ctrlKey) {
+    if (e.key === 'm' && editable != true && !e.metaKey && !e.ctrlKey) {
       return toggleMenu();
     }
     // Go to home with h key
-    if (e.key === 'h' && editable != true && !e.key.metaKey && !e.key.ctrlKey) {
+    if (e.key === 'h' && editable != true && !e.metaKey && !e.ctrlKey) {
       return goto('/');
     }
     // Go to new post with n key
-    if (e.key === 'n' && editable != true && !e.key.metaKey && !e.key.ctrlKey && currentUser) {
+    if (e.key === 'n' && editable != true && !e.metaKey && !e.ctrlKey && currentUser) {
       return goto('/posts/new');
     }
 
     // Go to friends list with f key
-    if (e.key === 'f' && editable != true && !e.key.metaKey && !e.key.ctrlKey && currentUser) {
+    if (e.key === 'f' && editable != true && !e.metaKey && !e.ctrlKey && currentUser) {
       return goto('/friends');
     }
   }
@@ -71,24 +86,24 @@
 
 <div
   class={classNames(
-    'backdrop-blur-sm z-10 text-sm lg:text-lg',
+    'backdrop-blur-xs z-10 text-sm lg:text-lg',
     !editable ? 'sticky top-0' : '',
     'bg-white bg-opacity-95'
   )}
 >
-  <div class="max-w-screen-md mx-auto py-4 px-6">
+  <div class="max-w-(--breakpoint-md) mx-auto py-4 px-6">
     <NotEditable {editable}>
-      <div class="flex items-center relative space-x-4">
-        <a href="/" on:click={goBack} class="text-lg font-bold uppercase">
+      <div class="flex items-center relative gap-4">
+        <a href="/" onclick={goBack} class="text-lg font-bold uppercase">
           {backButton ? '← ' : ''}
           {latestBio.name}
         </a>
-        <div class="flex-1" />
+        <div class="flex-1"></div>
         {#if currentUser}
           <PrimaryButton size="sm" href="/posts/new">New post</PrimaryButton>
         {/if}
         <button
-          on:click={() => (showMenu = true)}
+          onclick={() => (showMenu = true)}
           class="w-[26px] h-[26px] border border-black rounded-full"
           title={'Open Menu'}
         >
@@ -117,7 +132,8 @@
     <div class="p-8 flex flex-col space-y-4 relative">
       <button
         class="absolute right-6 sm:-right-4 -top-4 bg-black text-white rounded-full"
-        on:click={() => (showMenu = false)}
+        onclick={() => (showMenu = false)}
+        aria-label="Close menu"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +148,7 @@
       </button>
 
       {#if currentUser}
-        <slot />
+        {@render children?.()}
 
         <div class="space-y-4 flex flex-col pt-8">
           <PrimaryButton size="sm" href="/posts/new">New post</PrimaryButton>
@@ -148,19 +164,29 @@
       {#if currentUser}
         <div class="pt-8 flex">
           <div>Signed in as {currentUser.name}</div>
-          <div class="flex-1" />
+          <div class="flex-1"></div>
           <div>
-            <a
-              data-sveltekit-preload-data="off"
-              class="underline"
-              href="/logout"
-              on:click={toggleMenu}>Sign out</a
-            >
+            <a data-sveltekit-reload class="underline" href="/logout">Sign out</a>
           </div>
         </div>
       {:else}
         <div class="">
-          <form method="POST" action="/login" class="flex flex-col space-y-8">
+          <form
+            method="POST"
+            action="/login"
+            class="flex flex-col space-y-8"
+            use:enhance={() => {
+              loginError = false;
+              return async ({ result }) => {
+                if (result.type === 'failure') {
+                  loginError = true;
+                } else if (result.type === 'redirect') {
+                  showMenu = false;
+                  goto(result.location, { invalidateAll: true });
+                }
+              };
+            }}
+          >
             <div class="flex flex-col">
               <label for="password" class="font-semibold mb-6 text-3xl">Sign in</label>
               <Input
@@ -169,10 +195,16 @@
                 id="password"
                 placeholder="Enter your password"
               />
+              {#if loginError}
+                <p class="text-red-600 mt-2">Incorrect password. Please try again.</p>
+              {/if}
             </div>
             <PrimaryButton type="submit">Sign in</PrimaryButton>
             <div class="pt-8 text-sm sm:text-base">
-              Only the owner can sign in. But you can run <a class="underline" href="https://www.postowl.com">PostOwl</a> yourself.
+              Only the owner can sign in. But you can run <a
+                class="underline"
+                href="https://www.postowl.com">PostOwl</a
+              > yourself.
             </div>
           </form>
         </div>
@@ -181,4 +213,4 @@
   </Modal>
 {/if}
 
-<svelte:window on:keydown={onKeyDown} />
+<svelte:window onkeydown={onKeyDown} />
